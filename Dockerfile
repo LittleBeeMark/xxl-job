@@ -10,20 +10,13 @@ FROM maven:3.6.3 AS compile_stage
 ENV PROJECT_NAME xxl-job
 #定义工作目录
 ENV WORK_PATH /usr/src/$PROJECT_NAME
-####################定义环境变量 start####################
 
+####################定义环境变量 start####################
 #将源码复制到当前目录
 COPY . $WORK_PATH
 
-#如果前面您已经准备好了repository目录，就可以用来替换镜像中的repository目录了，先删除镜像中已有的repository
-#RUN rm -rf /root/.m2/repository
-
-#将准备好的repository文件夹复制进来，这样相当于镜像环境中已经有了java工程所需的jar，可以避免去maven中央仓库下载
-#COPY ./repository /root/.m2/repository
-
 #编译构建
 RUN cd $WORK_PATH && mvn clean package -Dmaven.test.skip
-#RUN cd $WORK_PATH && mvn clean package -U -DskipTests
 
 ### 第二阶段，用第一阶段的jar和jre镜像合成一个小体积的镜像
 FROM openjdk:8-jre-slim
@@ -31,22 +24,16 @@ FROM openjdk:8-jre-slim
 ####################定义环境变量 start####################
 #定义工程名称，也是源文件的文件夹名称
 ENV PROJECT_NAME xxl-job/xxl-job-admin
-#定义工程版本
-#ENV PROJECT_VERSION 0.0.1-SNAPSHOT
 #定义工作目录
 ENV WORK_PATH /usr/src/$PROJECT_NAME
+
 ####################定义环境变量 start####################
-
-#安全起见不用root账号，新建用户admin
-#RUN adduser -Dh /home/admin admin
-
 MAINTAINER xuxueli
 #工作目录是/opt
 WORKDIR /opt
 
 #从名为compile_stage的stage复制构建结果到工作目录
 COPY --from=compile_stage $WORK_PATH/target/xxl-job-admin-*.jar  /opt/app.jar
-#ADD xxl-job-admin/target/xxl-job-admin-*.jar /opt/app.jar
 
 ENV PARAMS=""
 
